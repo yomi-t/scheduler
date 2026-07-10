@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
-	"scheduler-backend/internal/router"
+	"scheduler-backend/pkg/server"
 )
 
-var apiHandler = router.New()
+var apiHandler = server.NewHandler()
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	apiHandler.ServeHTTP(w, r)
