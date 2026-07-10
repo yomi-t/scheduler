@@ -49,6 +49,10 @@ export default function HeatmapGrid({
     return Math.min(4, Math.ceil((count / total) * 5));
   }
 
+  function toggleDate(date: string) {
+    setExpandedDate((current) => (current === date ? null : date));
+  }
+
   const gridStyle = {
     gridTemplateColumns: `112px repeat(${slotsPerDay}, minmax(24px, 1fr))`,
   };
@@ -80,7 +84,7 @@ export default function HeatmapGrid({
                 <button
                   type="button"
                   className={`${styles.dateHeader} ${expanded ? styles.dateHeaderOpen : ""}`}
-                  onClick={() => setExpandedDate(expanded ? null : date)}
+                  onClick={() => toggleDate(date)}
                   aria-expanded={expanded}
                   title={
                     expanded
@@ -103,6 +107,7 @@ export default function HeatmapGrid({
                       role="cell"
                       className={styles.cell}
                       data-level={lv}
+                      onClick={() => toggleDate(date)}
                       title={
                         `${formatDateLabel(date)} ${timeRange} — ${names.length}/${total}人` +
                         (names.length > 0 ? `: ${names.join(", ")}` : "")
@@ -151,7 +156,7 @@ export default function HeatmapGrid({
         ))}
         <span className={styles.legendLabel}>全員</span>
         <span className={styles.legendNote}>
-          日付をクリックすると参加者ごとの内訳が開きます
+          日付またはマスをクリックすると参加者ごとの内訳が開きます
         </span>
       </div>
     </div>

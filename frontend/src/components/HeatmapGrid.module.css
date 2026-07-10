@@ -87,6 +87,13 @@
   min-width: 24px;
   border-radius: 3px;
   background: var(--paper-raised);
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.cell:hover {
+  filter: saturate(1.08);
+  transform: translateY(-1px);
 }
 
 .cell[data-level="1"] { background: var(--heat-1); }
