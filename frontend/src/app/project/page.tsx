@@ -154,9 +154,6 @@ export default function ProjectPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link className={styles.backLink} href="/">
-          ← scheduler
-        </Link>
         <h1 className={styles.title}>{data.name}</h1>
         <p className={styles.meta}>
           {formatDateLabel(data.startDate)} 〜 {formatDateLabel(data.endDate)}
