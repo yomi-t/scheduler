@@ -45,7 +45,8 @@ export default function HeatmapGrid({
 
   function level(count: number): number {
     if (count === 0 || total === 0) return 0;
-    return Math.min(5, Math.ceil((count / total) * 5));
+    if (count === total) return 5;
+    return Math.min(4, Math.ceil((count / total) * 5));
   }
 
   const gridStyle = {
