@@ -1,55 +1,61 @@
 package router
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"os"
-	"strings"
+
+	"scheduler-backend/internal/handler"
+	"scheduler-backend/internal/store"
 )
 
-func New() *http.ServeMux {
-	mux := http.NewServeMux()
-
-	// CORS middleware wrapper
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
-		if allowedOrigin == "" {
-			allowedOrigin = "http://localhost:3000"
+// New は DATABASE_URL があれば Postgres、なければ in-memory ストアで API を構築する。
+func New() http.Handler {
+	var s store.Store
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		pg, err := store.NewPostgres(context.Background(), url)
+		if err != nil {
+			log.Fatalf("postgres init: %v", err)
 		}
+		s = pg
+	} else {
+		log.Println("DATABASE_URL is not set; using in-memory store (data is not persisted)")
+		s = store.NewMemory()
+	}
+	return WithStore(s)
+}
 
-		if origin == allowedOrigin || allowedOrigin == "*" {
+func WithStore(s store.Store) http.Handler {
+	h := &handler.Handler{Store: s}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/health", h.Health)
+	mux.HandleFunc("POST /api/projects", h.CreateProject)
+	mux.HandleFunc("GET /api/projects/{id}", h.GetProject)
+	mux.HandleFunc("POST /api/projects/{id}/participants", h.AddParticipant)
+	mux.HandleFunc("PUT /api/projects/{id}/participants/{pid}", h.UpdateParticipant)
+
+	return cors(mux)
+}
+
+func cors(next http.Handler) http.Handler {
+	allowed := os.Getenv("ALLOWED_ORIGIN")
+	if allowed == "" {
+		allowed = "http://localhost:3000"
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin != "" && (allowed == "*" || origin == allowed) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Vary", "Origin")
 		}
-
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-
-		// Route to handler
-		path := strings.TrimPrefix(r.URL.Path, "/api")
-		if path == "/health" {
-			handleHealth(w, r)
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte(`{"error":"not found"}`))
-		}
+		next.ServeHTTP(w, r)
 	})
-
-	return mux
-}
-
-func handleHealth(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte(`{"error":"method not allowed"}`))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok"}`))
 }

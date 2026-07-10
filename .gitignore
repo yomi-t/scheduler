@@ -8,6 +8,7 @@ frontend/dist/
 # Backend
 backend/.vercel/
 backend/.env*.local
+backend/.env
 
 # IDE
 .vscode/

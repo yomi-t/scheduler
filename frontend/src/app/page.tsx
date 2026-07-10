@@ -1,32 +1,165 @@
-'use client';
+"use client";
+
+import { useState } from "react";
+import { createProject } from "@/lib/api";
+import { projectPath } from "@/lib/paths";
+import { timeOptions, timeToMinutes } from "@/lib/slots";
+import styles from "./page.module.css";
+
+function todayISO(offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+const START_OPTIONS = timeOptions(0, 23 * 60 + 30);
+const END_OPTIONS = timeOptions(30, 24 * 60);
 
 export default function Home() {
+  const [name, setName] = useState("");
+  const [startDate, setStartDate] = useState(todayISO(1));
+  const [endDate, setEndDate] = useState(todayISO(7));
+  const [startTime, setStartTime] = useState("10:00");
+  const [endTime, setEndTime] = useState("20:00");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim()) {
+      setError("プロジェクト名を入力してください");
+      return;
+    }
+    if (endDate < startDate) {
+      setError("終了日は開始日以降にしてください");
+      return;
+    }
+    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      setError("終了時刻は開始時刻より後にしてください");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const project = await createProject({
+        name: name.trim(),
+        startDate,
+        endDate,
+        startTime,
+        endTime,
+      });
+      // 静的ホスティングの SPA フォールバックと相性の良いハードナビゲーション
+      window.location.assign(projectPath(project.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "エラーが発生しました");
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center", background: "linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%)" }}>
-      <h1 style={{ fontSize: "3.5rem", fontWeight: 700, marginBottom: "1rem", letterSpacing: "-0.02em" }}>
-        scheduler
-      </h1>
-      <p style={{ fontSize: "1.2rem", color: "#666", marginBottom: "3rem", maxWidth: "500px", lineHeight: 1.6 }}>
-        時間帯を含む、会議日程調整アプリ。プロジェクトを作成して、参加者の予定を集約します。
-      </p>
-      <button
-        onClick={() => {
-          // 後続タスクで実装
-        }}
-        disabled
-        style={{
-          padding: "0.75rem 2rem",
-          fontSize: "1rem",
-          fontWeight: 600,
-          borderRadius: "0.375rem",
-          border: "1px solid #ddd",
-          background: "#fafafa",
-          cursor: "default",
-          color: "#999",
-        }}
-      >
-        プロジェクトを作成 (後続タスクで実装)
-      </button>
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <p className={styles.brand}>
+          <span className={styles.brandStamp}>予</span>
+          scheduler
+        </p>
+        <h1 className={styles.title}>
+          予定は、
+          <br />
+          マス目で合わせる。
+        </h1>
+        <p className={styles.lead}>
+          日付 × 時間のグリッドに、参加できる時間をみんなで塗るだけ。
+          30分きざみの日程調整をリンクひとつで。
+        </p>
+        <ol className={styles.steps}>
+          <li>プロジェクトを作る</li>
+          <li>リンクを共有する</li>
+          <li>濃い緑のマスに集合</li>
+        </ol>
+      </section>
+
+      <section className={styles.formCard}>
+        <h2 className={styles.formTitle}>プロジェクトを作成</h2>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <label className={styles.field}>
+            <span className={styles.label}>プロジェクト名</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例: 新年会の日程調整"
+              maxLength={100}
+              required
+            />
+          </label>
+
+          <div className={styles.rangeRow}>
+            <label className={styles.field}>
+              <span className={styles.label}>開始日</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+            </label>
+            <span className={styles.rangeTilde}>〜</span>
+            <label className={styles.field}>
+              <span className={styles.label}>終了日</span>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </label>
+          </div>
+
+          <div className={styles.rangeRow}>
+            <label className={styles.field}>
+              <span className={styles.label}>開始時刻</span>
+              <select
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              >
+                {START_OPTIONS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className={styles.rangeTilde}>〜</span>
+            <label className={styles.field}>
+              <span className={styles.label}>終了時刻</span>
+              <select
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              >
+                {END_OPTIONS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          )}
+
+          <button type="submit" className={styles.submit} disabled={submitting}>
+            {submitting ? "作成中…" : "作成して共有リンクを発行"}
+          </button>
+        </form>
+      </section>
     </main>
   );
 }

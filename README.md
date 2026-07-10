@@ -12,9 +12,12 @@ cd frontend
 npm install
 cp .env.example .env.local
 
-# バックエンド（ダウンロードのみ、現在は依存なし）
+# バックエンド
 cd ../backend
-go mod download  # optional
+go mod download
+
+# Postgres (Neon) を使う場合のみ設定。未設定なら in-memory で動作
+export DATABASE_URL="postgres://..."
 ```
 
 ### 開発
