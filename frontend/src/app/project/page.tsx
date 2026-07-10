@@ -189,6 +189,9 @@ export default function ProjectPage() {
 
           <div className={styles.field}>
             <span className={styles.label}>参加できる時間(緑に塗る)</span>
+            <p className={styles.inputTip}>
+              Tip: 1つ目のマスをクリックしてから Shift+クリックすると、間のマスをまとめて選択できます。
+            </p>
             <AvailabilityEditor
               dates={dates}
               slotsPerDay={slotsPerDay}

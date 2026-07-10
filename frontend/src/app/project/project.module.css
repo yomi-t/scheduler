@@ -114,6 +114,13 @@
   letter-spacing: 0.05em;
 }
 
+.inputTip {
+  max-width: 640px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .error {
   color: var(--accent-deep);
   background: var(--accent-soft);
