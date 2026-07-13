@@ -23,6 +23,7 @@ type Participant struct {
 	Nickname  string    `json:"nickname"`
 	Comment   string    `json:"comment"`
 	Slots     Slots     `json:"slots"`
+	MaybeSlots Slots    `json:"maybeSlots"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

@@ -67,6 +67,7 @@ func TestProjectAndParticipantFlow(t *testing.T) {
 		"nickname": "たろう",
 		"comment":  "水曜は遅れます",
 		"slots":    model.Slots{"2026-01-01": {0, 1, 2}, "2026-01-05": {19}},
+		"maybeSlots": model.Slots{"2026-01-02": {5}},
 	})
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("add participant: got %d, body %s", rec.Code, rec.Body.String())
@@ -74,9 +75,10 @@ func TestProjectAndParticipantFlow(t *testing.T) {
 	participantID := str(t, res["id"])
 
 	rec, res = doJSON(t, h, "PUT", "/api/projects/"+projectID+"/participants/"+participantID, map[string]any{
-		"nickname": "たろう",
-		"comment":  "",
-		"slots":    model.Slots{"2026-01-02": {5}},
+		"nickname":   "たろう",
+		"comment":    "",
+		"slots":      model.Slots{"2026-01-02": {5}},
+		"maybeSlots": model.Slots{"2026-01-03": {10}},
 	})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("update participant: got %d, body %s", rec.Code, rec.Body.String())
@@ -98,6 +100,9 @@ func TestProjectAndParticipantFlow(t *testing.T) {
 	}
 	if got := participants[0].Slots["2026-01-02"]; len(got) != 1 || got[0] != 5 {
 		t.Fatalf("updated slots not reflected: %v", participants[0].Slots)
+	}
+	if got := participants[0].MaybeSlots["2026-01-03"]; len(got) != 1 || got[0] != 10 {
+		t.Fatalf("updated maybeSlots not reflected: %v", participants[0].MaybeSlots)
 	}
 }
 
@@ -139,6 +144,7 @@ func TestValidationErrors(t *testing.T) {
 		{"date out of range", map[string]any{"nickname": "a", "slots": model.Slots{"2026-02-01": {0}}}},
 		{"slot out of range", map[string]any{"nickname": "a", "slots": model.Slots{"2026-01-01": {20}}}},
 		{"negative slot", map[string]any{"nickname": "a", "slots": model.Slots{"2026-01-01": {-1}}}},
+		{"duplicate slot and maybeSlot", map[string]any{"nickname": "a", "slots": model.Slots{"2026-01-01": {0}}, "maybeSlots": model.Slots{"2026-01-01": {0}}}},
 	}
 	for _, tc := range participantCases {
 		rec, _ := doJSON(t, h, "POST", "/api/projects/"+projectID+"/participants", tc.body)

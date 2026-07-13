@@ -4,6 +4,34 @@
   gap: 10px;
 }
 
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.modeButton {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 2px solid var(--grid-line-strong);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modeButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.modeButton.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .grid {
   display: grid;
   gap: 2px;
@@ -75,6 +103,10 @@
   border-radius: 3px;
   cursor: pointer;
   transition: background 0.08s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .cell:hover {
@@ -82,13 +114,31 @@
   box-shadow: inset 0 0 0 1.5px var(--select);
 }
 
-.selected {
+.cell[data-state="available"] {
   background: var(--select);
 }
 
-.selected:hover {
+.cell[data-state="available"]:hover {
   background: var(--heat-5);
   box-shadow: inset 0 0 0 1.5px var(--heat-5);
+}
+
+.cell[data-state="maybe"] {
+  background: var(--accent-soft);
+}
+
+.cell[data-state="maybe"]:hover {
+  background: rgba(194, 73, 47, 0.25);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.filled {
+}
+
+.mark {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .focused {

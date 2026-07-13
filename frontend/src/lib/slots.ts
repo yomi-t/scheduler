@@ -56,6 +56,40 @@ export function slotKey(date: string, index: number): string {
   return `${date}_${index}`;
 }
 
+export type SlotState = "available" | "maybe";
+
+export function combineSlotsToStateMap(
+  slots: Record<string, number[]>,
+  maybeSlots: Record<string, number[]>
+): Map<string, SlotState> {
+  const map = new Map<string, SlotState>();
+  for (const [date, indices] of Object.entries(slots)) {
+    for (const i of indices) map.set(slotKey(date, i), "available");
+  }
+  for (const [date, indices] of Object.entries(maybeSlots)) {
+    for (const i of indices) map.set(slotKey(date, i), "maybe");
+  }
+  return map;
+}
+
+export function stateMapToSlots(map: Map<string, SlotState>): {
+  slots: Record<string, number[]>;
+  maybeSlots: Record<string, number[]>;
+} {
+  const slots: Record<string, number[]> = {};
+  const maybeSlots: Record<string, number[]> = {};
+  for (const [key, state] of map.entries()) {
+    const at = key.lastIndexOf("_");
+    const date = key.slice(0, at);
+    const index = Number(key.slice(at + 1));
+    const target = state === "available" ? slots : maybeSlots;
+    (target[date] ??= []).push(index);
+  }
+  for (const indices of Object.values(slots)) indices.sort((a, b) => a - b);
+  for (const indices of Object.values(maybeSlots)) indices.sort((a, b) => a - b);
+  return { slots, maybeSlots };
+}
+
 export function slotsToSet(slots: Record<string, number[]>): Set<string> {
   const set = new Set<string>();
   for (const [date, indices] of Object.entries(slots)) {

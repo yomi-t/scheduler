@@ -19,8 +19,9 @@ import {
   formatDateLabel,
   listDates,
   slotCount,
-  slotsToSet,
-  setToSlots,
+  combineSlotsToStateMap,
+  stateMapToSlots,
+  type SlotState,
 } from "@/lib/slots";
 import AvailabilityEditor from "@/components/AvailabilityEditor";
 import HeatmapGrid from "@/components/HeatmapGrid";
@@ -31,7 +32,7 @@ type Editing = {
   participantId: string | null; // null = 新規
   nickname: string;
   comment: string;
-  selected: Set<string>;
+  selected: Map<string, SlotState>;
 };
 
 const noopSubscribe = () => () => {};
@@ -83,7 +84,7 @@ export default function ProjectPage() {
       participantId: null,
       nickname: "",
       comment: "",
-      selected: new Set(),
+      selected: new Map(),
     });
   }
 
@@ -95,7 +96,7 @@ export default function ProjectPage() {
       participantId,
       nickname: p.nickname,
       comment: p.comment,
-      selected: slotsToSet(p.slots),
+      selected: combineSlotsToStateMap(p.slots, p.maybeSlots),
     });
   }
 
@@ -107,10 +108,12 @@ export default function ProjectPage() {
     }
     setSaving(true);
     setSaveError(null);
+    const { slots, maybeSlots } = stateMapToSlots(editing.selected);
     const input: ParticipantInput = {
       nickname: editing.nickname.trim(),
       comment: editing.comment,
-      slots: setToSlots(editing.selected),
+      slots,
+      maybeSlots,
     };
     try {
       if (editing.participantId) {
@@ -188,9 +191,9 @@ export default function ProjectPage() {
           </label>
 
           <div className={styles.field}>
-            <span className={styles.label}>参加できる時間(緑に塗る)</span>
+            <span className={styles.label}>参加可否を選択</span>
             <p className={styles.inputTip}>
-              Tip: 1つ目のマスをクリックしてから Shift+クリックすると、間のマスをまとめて選択できます。
+              Tip: ボタンで○(参加可能)/△(条件付き)を切り替え。Shift+クリックで矩形塗り。
             </p>
             <AvailabilityEditor
               dates={dates}

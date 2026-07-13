@@ -144,18 +144,47 @@
   min-width: 24px;
   border-radius: 3px;
   background: var(--paper-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.personOk {
-  background: var(--heat-3);
+.statusMark {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.personCell[data-status="available"] .statusMark {
+  color: var(--heat-4);
+}
+
+.personCell[data-status="maybe"] .statusMark {
+  color: var(--accent);
+}
+
+.personCell[data-status="unavailable"] .statusMark {
+  color: var(--ink-faint);
 }
 
 .legend {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  gap: 6px;
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+.legendTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.legendGradient {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .legendSwatch {
@@ -175,8 +204,31 @@
   font-size: 11px;
 }
 
+.filterButton {
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--grid-line-strong);
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.filterButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filterButton[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
+}
+
 .legendNote {
-  margin-left: auto;
   font-size: 12px;
   color: var(--ink-faint);
 }

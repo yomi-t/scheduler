@@ -8,9 +8,10 @@ import (
 )
 
 type participantRequest struct {
-	Nickname string      `json:"nickname"`
-	Comment  string      `json:"comment"`
-	Slots    model.Slots `json:"slots"`
+	Nickname  string      `json:"nickname"`
+	Comment   string      `json:"comment"`
+	Slots     model.Slots `json:"slots"`
+	MaybeSlots model.Slots `json:"maybeSlots"`
 }
 
 func (h *Handler) AddParticipant(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,10 @@ func (h *Handler) AddParticipant(w http.ResponseWriter, r *http.Request) {
 	if req.Slots == nil {
 		req.Slots = model.Slots{}
 	}
-	if err := validateParticipantInput(req.Nickname, req.Comment, req.Slots, project); err != nil {
+	if req.MaybeSlots == nil {
+		req.MaybeSlots = model.Slots{}
+	}
+	if err := validateParticipantInput(req.Nickname, req.Comment, req.Slots, req.MaybeSlots, project); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -37,6 +41,7 @@ func (h *Handler) AddParticipant(w http.ResponseWriter, r *http.Request) {
 		Nickname:  req.Nickname,
 		Comment:   req.Comment,
 		Slots:     req.Slots,
+		MaybeSlots: req.MaybeSlots,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -62,7 +67,10 @@ func (h *Handler) UpdateParticipant(w http.ResponseWriter, r *http.Request) {
 	if req.Slots == nil {
 		req.Slots = model.Slots{}
 	}
-	if err := validateParticipantInput(req.Nickname, req.Comment, req.Slots, project); err != nil {
+	if req.MaybeSlots == nil {
+		req.MaybeSlots = model.Slots{}
+	}
+	if err := validateParticipantInput(req.Nickname, req.Comment, req.Slots, req.MaybeSlots, project); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -71,6 +79,7 @@ func (h *Handler) UpdateParticipant(w http.ResponseWriter, r *http.Request) {
 		Nickname:  req.Nickname,
 		Comment:   req.Comment,
 		Slots:     req.Slots,
+		MaybeSlots: req.MaybeSlots,
 		UpdatedAt: time.Now().UTC(),
 	}
 	updated, err := h.Store.UpdateParticipant(r.Context(), projectID, p)

@@ -52,7 +52,7 @@ func validateProjectInput(name, description, startDate, endDate, startTime, endT
 	return nil
 }
 
-func validateParticipantInput(nickname, comment string, slots model.Slots, p model.Project) error {
+func validateParticipantInput(nickname, comment string, slots model.Slots, maybeSlots model.Slots, p model.Project) error {
 	if n := utf8.RuneCountInString(nickname); n == 0 || n > maxNicknameLen {
 		return fmt.Errorf("ニックネームは1〜%d文字で入力してください", maxNicknameLen)
 	}
@@ -62,6 +62,21 @@ func validateParticipantInput(nickname, comment string, slots model.Slots, p mod
 	sd, _ := parseDate(p.StartDate)
 	ed, _ := parseDate(p.EndDate)
 	slotsPerDay := slotsPerDay(p)
+
+	if err := validateSlotRange(slots, sd, ed, slotsPerDay); err != nil {
+		return err
+	}
+	if err := validateSlotRange(maybeSlots, sd, ed, slotsPerDay); err != nil {
+		return err
+	}
+
+	if err := validateSlotDuplicate(slots, maybeSlots); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateSlotRange(slots model.Slots, sd time.Time, ed time.Time, slotsPerDay int) error {
 	for date, indices := range slots {
 		d, err := parseDate(date)
 		if err != nil || d.Before(sd) || d.After(ed) {
@@ -70,6 +85,20 @@ func validateParticipantInput(nickname, comment string, slots model.Slots, p mod
 		for _, idx := range indices {
 			if idx < 0 || idx >= slotsPerDay {
 				return fmt.Errorf("時間スロット %d は範囲外です", idx)
+			}
+		}
+	}
+	return nil
+}
+
+func validateSlotDuplicate(slots model.Slots, maybeSlots model.Slots) error {
+	for date, indices := range slots {
+		maybeIndices := maybeSlots[date]
+		for _, idx := range indices {
+			for _, mIdx := range maybeIndices {
+				if idx == mIdx {
+					return fmt.Errorf("同じ時間帯を○と△の両方に登録することはできません")
+				}
 			}
 		}
 	}

@@ -6,6 +6,7 @@ import {
   slotKey,
   slotStartLabel,
   timeToMinutes,
+  type SlotState,
 } from "@/lib/slots";
 import styles from "./AvailabilityEditor.module.css";
 
@@ -13,8 +14,8 @@ type Props = {
   dates: string[];
   slotsPerDay: number;
   startTime: string;
-  selected: Set<string>;
-  onChange: (next: Set<string>) => void;
+  selected: Map<string, SlotState>;
+  onChange: (next: Map<string, SlotState>) => void;
 };
 
 type CellPos = { row: number; col: number };
@@ -30,18 +31,23 @@ export default function AvailabilityEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const [focus, setFocus] = useState<CellPos>({ row: 0, col: 0 });
   const [hasFocus, setHasFocus] = useState(false);
+  const [paintMode, setPaintMode] = useState<SlotState>("available");
   // Shift+クリック / Space の矩形適用の基点。state は直前の操作で適用した値。
-  const anchorRef = useRef<(CellPos & { state: boolean }) | null>(null);
+  const anchorRef = useRef<(CellPos & { state: SlotState | null }) | null>(null);
 
   const cellId = (row: number, col: number) => `${gridId}-${row}-${col}`;
 
   function applyToggle(row: number, col: number) {
     const key = slotKey(dates[row], col);
-    const next = new Set(selected);
-    const state = !next.has(key);
-    if (state) next.add(key);
-    else next.delete(key);
-    anchorRef.current = { row, col, state };
+    const next = new Map(selected);
+    const currentState = next.get(key);
+    if (currentState === paintMode) {
+      next.delete(key);
+      anchorRef.current = { row, col, state: null };
+    } else {
+      next.set(key, paintMode);
+      anchorRef.current = { row, col, state: paintMode };
+    }
     onChange(next);
   }
 
@@ -51,14 +57,22 @@ export default function AvailabilityEditor({
       applyToggle(row, col);
       return;
     }
-    const next = new Set(selected);
+    const next = new Map(selected);
     const [r1, r2] = [Math.min(anchor.row, row), Math.max(anchor.row, row)];
     const [c1, c2] = [Math.min(anchor.col, col), Math.max(anchor.col, col)];
-    for (let r = r1; r <= r2; r++) {
-      for (let c = c1; c <= c2; c++) {
-        const key = slotKey(dates[r], c);
-        if (anchor.state) next.add(key);
-        else next.delete(key);
+    if (anchor.state === null) {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const key = slotKey(dates[r], c);
+          next.delete(key);
+        }
+      }
+    } else {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const key = slotKey(dates[r], c);
+          next.set(key, anchor.state);
+        }
       }
     }
     onChange(next);
@@ -110,6 +124,24 @@ export default function AvailabilityEditor({
 
   return (
     <div className={styles.wrapper}>
+      <div className={styles.controls}>
+        <button
+          type="button"
+          className={`${styles.modeButton} ${paintMode === "available" ? styles.active : ""}`}
+          onClick={() => setPaintMode("available")}
+          title="○(参加可能)で塗る"
+        >
+          ◯
+        </button>
+        <button
+          type="button"
+          className={`${styles.modeButton} ${paintMode === "maybe" ? styles.active : ""}`}
+          onClick={() => setPaintMode("maybe")}
+          title="△(条件付き)で塗る"
+        >
+          △
+        </button>
+      </div>
       <div
         ref={containerRef}
         className={styles.grid}
@@ -148,7 +180,7 @@ export default function AvailabilityEditor({
             </div>
             {Array.from({ length: slotsPerDay }, (_, col) => {
               const key = slotKey(date, col);
-              const isSelected = selected.has(key);
+              const state = selected.get(key);
               const isFocused =
                 hasFocus && focus.row === row && focus.col === col;
               return (
@@ -156,15 +188,19 @@ export default function AvailabilityEditor({
                   key={col}
                   id={cellId(row, col)}
                   role="gridcell"
-                  aria-selected={isSelected}
+                  aria-selected={state !== undefined}
+                  data-state={state}
                   title={`${formatDateLabel(date)} ${slotStartLabel(startTime, col)}〜${slotStartLabel(startTime, col + 1)}`}
                   className={[
                     styles.cell,
-                    isSelected ? styles.selected : "",
+                    state ? styles.filled : "",
                     isFocused ? styles.focused : "",
                   ].join(" ")}
                   onClick={(e) => handleCellClick(e, row, col)}
-                />
+                >
+                  {state === "available" && <span className={styles.mark}>◯</span>}
+                  {state === "maybe" && <span className={styles.mark}>△</span>}
+                </div>
               );
             })}
           </div>
@@ -172,8 +208,8 @@ export default function AvailabilityEditor({
       </div>
 
       <p className={styles.hint}>
-        クリックで切り替え / Shift+クリックで直前のマスから範囲選択 /
-        矢印キーで移動、Space で切り替え
+        ボタンで○/△を切り替え、クリックで塗る(同じマスをクリックで未選択に) /
+        Shift+クリックで直前のマスから矩形選択 / 矢印キーで移動、Space で塗る
       </p>
     </div>
   );

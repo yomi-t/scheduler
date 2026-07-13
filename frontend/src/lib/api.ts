@@ -16,6 +16,7 @@ export type Participant = {
   nickname: string;
   comment: string;
   slots: Slots;
+  maybeSlots: Slots;
   createdAt: string;
   updatedAt: string;
 };
@@ -35,6 +36,7 @@ export type ParticipantInput = {
   nickname: string;
   comment: string;
   slots: Slots;
+  maybeSlots: Slots;
 };
 
 const BASE = (

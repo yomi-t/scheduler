@@ -30,10 +30,12 @@ CREATE TABLE IF NOT EXISTS participants (
 	nickname   TEXT NOT NULL,
 	comment    TEXT NOT NULL DEFAULT '',
 	slots      JSONB NOT NULL DEFAULT '{}',
+	maybe_slots JSONB NOT NULL DEFAULT '{}',
 	created_at TIMESTAMPTZ NOT NULL,
 	updated_at TIMESTAMPTZ NOT NULL,
 	PRIMARY KEY (project_id, id)
 );
+ALTER TABLE participants ADD COLUMN IF NOT EXISTS maybe_slots JSONB NOT NULL DEFAULT '{}';
 `
 
 // Postgres は Neon 等の Postgres を使う本番用ストア。
@@ -87,7 +89,7 @@ func (s *Postgres) ListParticipants(ctx context.Context, projectID string) ([]mo
 		return nil, err
 	}
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, nickname, comment, slots, created_at, updated_at
+		`SELECT id, nickname, comment, slots, maybe_slots, created_at, updated_at
 		 FROM participants WHERE project_id = $1 ORDER BY created_at`, projectID)
 	if err != nil {
 		return nil, err
@@ -97,11 +99,14 @@ func (s *Postgres) ListParticipants(ctx context.Context, projectID string) ([]mo
 	list := []model.Participant{}
 	for rows.Next() {
 		var p model.Participant
-		var slotsJSON []byte
-		if err := rows.Scan(&p.ID, &p.Nickname, &p.Comment, &slotsJSON, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		var slotsJSON, maybeSlotsJSON []byte
+		if err := rows.Scan(&p.ID, &p.Nickname, &p.Comment, &slotsJSON, &maybeSlotsJSON, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(slotsJSON, &p.Slots); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(maybeSlotsJSON, &p.MaybeSlots); err != nil {
 			return nil, err
 		}
 		list = append(list, p)
@@ -117,10 +122,14 @@ func (s *Postgres) AddParticipant(ctx context.Context, projectID string, p model
 	if err != nil {
 		return err
 	}
+	maybeSlotsJSON, err := json.Marshal(p.MaybeSlots)
+	if err != nil {
+		return err
+	}
 	_, err = s.pool.Exec(ctx,
-		`INSERT INTO participants (id, project_id, nickname, comment, slots, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		p.ID, projectID, p.Nickname, p.Comment, slotsJSON, p.CreatedAt, p.UpdatedAt)
+		`INSERT INTO participants (id, project_id, nickname, comment, slots, maybe_slots, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		p.ID, projectID, p.Nickname, p.Comment, slotsJSON, maybeSlotsJSON, p.CreatedAt, p.UpdatedAt)
 	return err
 }
 
@@ -129,11 +138,15 @@ func (s *Postgres) UpdateParticipant(ctx context.Context, projectID string, p mo
 	if err != nil {
 		return model.Participant{}, err
 	}
+	maybeSlotsJSON, err := json.Marshal(p.MaybeSlots)
+	if err != nil {
+		return model.Participant{}, err
+	}
 	err = s.pool.QueryRow(ctx,
-		`UPDATE participants SET nickname = $1, comment = $2, slots = $3, updated_at = $4
-		 WHERE project_id = $5 AND id = $6
+		`UPDATE participants SET nickname = $1, comment = $2, slots = $3, maybe_slots = $4, updated_at = $5
+		 WHERE project_id = $6 AND id = $7
 		 RETURNING created_at`,
-		p.Nickname, p.Comment, slotsJSON, p.UpdatedAt, projectID, p.ID).
+		p.Nickname, p.Comment, slotsJSON, maybeSlotsJSON, p.UpdatedAt, projectID, p.ID).
 		Scan(&p.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return model.Participant{}, ErrNotFound
