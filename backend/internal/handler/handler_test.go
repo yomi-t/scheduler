@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"scheduler-backend/internal/model"
@@ -47,11 +48,12 @@ func TestProjectAndParticipantFlow(t *testing.T) {
 	h := router.WithStore(store.NewMemory())
 
 	rec, res := doJSON(t, h, "POST", "/api/projects", map[string]string{
-		"name":      "новогодний合宿",
-		"startDate": "2026-01-01",
-		"endDate":   "2026-01-09",
-		"startTime": "10:00",
-		"endTime":   "20:00",
+		"name":        "новогодний合宿",
+		"description": "持ち物と集合場所は後で追記します",
+		"startDate":   "2026-01-01",
+		"endDate":     "2026-01-09",
+		"startTime":   "10:00",
+		"endTime":     "20:00",
 	})
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create project: got %d, body %s", rec.Code, rec.Body.String())
@@ -84,6 +86,9 @@ func TestProjectAndParticipantFlow(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("get project: got %d", rec.Code)
 	}
+	if got := str(t, res["description"]); got != "持ち物と集合場所は後で追記します" {
+		t.Fatalf("description: got %q", got)
+	}
 	var participants []model.Participant
 	if err := json.Unmarshal(res["participants"], &participants); err != nil {
 		t.Fatal(err)
@@ -104,6 +109,7 @@ func TestValidationErrors(t *testing.T) {
 		body map[string]string
 	}{
 		{"empty name", map[string]string{"name": "", "startDate": "2026-01-01", "endDate": "2026-01-09", "startTime": "10:00", "endTime": "20:00"}},
+		{"description too long", map[string]string{"name": "x", "description": strings.Repeat("あ", 1001), "startDate": "2026-01-01", "endDate": "2026-01-09", "startTime": "10:00", "endTime": "20:00"}},
 		{"end before start date", map[string]string{"name": "x", "startDate": "2026-01-09", "endDate": "2026-01-01", "startTime": "10:00", "endTime": "20:00"}},
 		{"range too long", map[string]string{"name": "x", "startDate": "2026-01-01", "endDate": "2026-12-31", "startTime": "10:00", "endTime": "20:00"}},
 		{"time not on 30min", map[string]string{"name": "x", "startDate": "2026-01-01", "endDate": "2026-01-09", "startTime": "10:15", "endTime": "20:00"}},

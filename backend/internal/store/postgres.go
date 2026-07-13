@@ -16,12 +16,14 @@ const schema = `
 CREATE TABLE IF NOT EXISTS projects (
 	id         TEXT PRIMARY KEY,
 	name       TEXT NOT NULL,
+	description TEXT NOT NULL DEFAULT '',
 	start_date TEXT NOT NULL,
 	end_date   TEXT NOT NULL,
 	start_time TEXT NOT NULL,
 	end_time   TEXT NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL
 );
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
 CREATE TABLE IF NOT EXISTS participants (
 	id         TEXT NOT NULL,
 	project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -62,18 +64,18 @@ func (s *Postgres) Close() { s.pool.Close() }
 
 func (s *Postgres) CreateProject(ctx context.Context, p model.Project) error {
 	_, err := s.pool.Exec(ctx,
-		`INSERT INTO projects (id, name, start_date, end_date, start_time, end_time, created_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		p.ID, p.Name, p.StartDate, p.EndDate, p.StartTime, p.EndTime, p.CreatedAt)
+		`INSERT INTO projects (id, name, description, start_date, end_date, start_time, end_time, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		p.ID, p.Name, p.Description, p.StartDate, p.EndDate, p.StartTime, p.EndTime, p.CreatedAt)
 	return err
 }
 
 func (s *Postgres) GetProject(ctx context.Context, id string) (model.Project, error) {
 	var p model.Project
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, name, start_date, end_date, start_time, end_time, created_at
+		`SELECT id, name, description, start_date, end_date, start_time, end_time, created_at
 		 FROM projects WHERE id = $1`, id).
-		Scan(&p.ID, &p.Name, &p.StartDate, &p.EndDate, &p.StartTime, &p.EndTime, &p.CreatedAt)
+		Scan(&p.ID, &p.Name, &p.Description, &p.StartDate, &p.EndDate, &p.StartTime, &p.EndTime, &p.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return model.Project{}, ErrNotFound
 	}

@@ -19,6 +19,7 @@ const END_OPTIONS = timeOptions(30, 24 * 60);
 
 export default function Home() {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(todayISO(1));
   const [endDate, setEndDate] = useState(todayISO(7));
   const [startTime, setStartTime] = useState("10:00");
@@ -45,6 +46,7 @@ export default function Home() {
     try {
       const project = await createProject({
         name: name.trim(),
+        description: description.trim(),
         startDate,
         endDate,
         startTime,
@@ -93,6 +95,17 @@ export default function Home() {
               placeholder="例: 新年会の日程調整"
               maxLength={100}
               required
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.label}>説明文(任意)</span>
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="例: 候補日は仮押さえです。会場は駅周辺で調整します。"
+              maxLength={1000}
             />
           </label>
 

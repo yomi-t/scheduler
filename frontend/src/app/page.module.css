@@ -113,8 +113,13 @@
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
 }
 
 .label {

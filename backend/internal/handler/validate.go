@@ -9,16 +9,20 @@ import (
 )
 
 const (
-	maxNameLen     = 100
-	maxNicknameLen = 30
-	maxCommentLen  = 500
-	maxRangeDays   = 62
-	slotMinutes    = 30
+	maxNameLen        = 100
+	maxDescriptionLen = 1000
+	maxNicknameLen    = 30
+	maxCommentLen     = 500
+	maxRangeDays      = 62
+	slotMinutes       = 30
 )
 
-func validateProjectInput(name, startDate, endDate, startTime, endTime string) error {
+func validateProjectInput(name, description, startDate, endDate, startTime, endTime string) error {
 	if n := utf8.RuneCountInString(name); n == 0 || n > maxNameLen {
 		return fmt.Errorf("プロジェクト名は1〜%d文字で入力してください", maxNameLen)
+	}
+	if utf8.RuneCountInString(description) > maxDescriptionLen {
+		return fmt.Errorf("説明文は%d文字以内で入力してください", maxDescriptionLen)
 	}
 	sd, err := parseDate(startDate)
 	if err != nil {

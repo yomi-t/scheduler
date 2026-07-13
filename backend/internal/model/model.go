@@ -4,13 +4,14 @@ import "time"
 
 // Project は日程調整の1案件。日付は "YYYY-MM-DD"、時刻は "HH:MM"(30分刻み)。
 type Project struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	StartDate string    `json:"startDate"`
-	EndDate   string    `json:"endDate"`
-	StartTime string    `json:"startTime"`
-	EndTime   string    `json:"endTime"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	StartDate   string    `json:"startDate"`
+	EndDate     string    `json:"endDate"`
+	StartTime   string    `json:"startTime"`
+	EndTime     string    `json:"endTime"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 // Slots は日付 → その日の30分スロット番号(昇順)。

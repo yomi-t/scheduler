@@ -13,11 +13,12 @@ type Handler struct {
 }
 
 type createProjectRequest struct {
-	Name      string `json:"name"`
-	StartDate string `json:"startDate"`
-	EndDate   string `json:"endDate"`
-	StartTime string `json:"startTime"`
-	EndTime   string `json:"endTime"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	StartDate   string `json:"startDate"`
+	EndDate     string `json:"endDate"`
+	StartTime   string `json:"startTime"`
+	EndTime     string `json:"endTime"`
 }
 
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
@@ -25,18 +26,19 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-	if err := validateProjectInput(req.Name, req.StartDate, req.EndDate, req.StartTime, req.EndTime); err != nil {
+	if err := validateProjectInput(req.Name, req.Description, req.StartDate, req.EndDate, req.StartTime, req.EndTime); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	p := model.Project{
-		ID:        newID(12),
-		Name:      req.Name,
-		StartDate: req.StartDate,
-		EndDate:   req.EndDate,
-		StartTime: req.StartTime,
-		EndTime:   req.EndTime,
-		CreatedAt: time.Now().UTC(),
+		ID:          newID(12),
+		Name:        req.Name,
+		Description: req.Description,
+		StartDate:   req.StartDate,
+		EndDate:     req.EndDate,
+		StartTime:   req.StartTime,
+		EndTime:     req.EndTime,
+		CreatedAt:   time.Now().UTC(),
 	}
 	if err := h.Store.CreateProject(r.Context(), p); err != nil {
 		writeStoreError(w, err)

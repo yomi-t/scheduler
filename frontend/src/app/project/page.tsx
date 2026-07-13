@@ -160,6 +160,9 @@ export default function ProjectPage() {
           <span className={styles.metaDivider}>|</span>
           {data.startTime} 〜 {data.endTime}(30分きざみ)
         </p>
+        {data.description && (
+          <p className={styles.description}>{data.description}</p>
+        )}
         <ShareLink url={shareUrl(data.id)} />
       </header>
 

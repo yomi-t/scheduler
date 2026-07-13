@@ -3,6 +3,7 @@ export type Slots = Record<string, number[]>;
 export type Project = {
   id: string;
   name: string;
+  description: string;
   startDate: string;
   endDate: string;
   startTime: string;
@@ -23,6 +24,7 @@ export type ProjectDetail = Project & { participants: Participant[] };
 
 export type ProjectInput = {
   name: string;
+  description: string;
   startDate: string;
   endDate: string;
   startTime: string;
